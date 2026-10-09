@@ -1,3 +1,5 @@
+import AppKit
+import PDFKit
 import XCTest
 @testable import ConverterCore
 
@@ -78,5 +80,30 @@ final class ConverterTests: XCTestCase {
 
     func testRejectsGarbage() {
         XCTAssertThrowsError(try Converter.docxToMarkdown(Data("not a zip".utf8)))
+    }
+
+    @MainActor
+    func testMarkdownToPdfAndBack() throws {
+        _ = NSApplication.shared
+        let pdf = try Converter.markdownToPdf(sample)
+        let document = try XCTUnwrap(PDFDocument(data: pdf))
+        XCTAssertGreaterThanOrEqual(document.pageCount, 1)
+        let text = document.string ?? ""
+        XCTAssertTrue(text.contains("Title"), text)
+        XCTAssertTrue(text.contains("Last paragraph."), text)
+
+        let md = try Converter.pdfToMarkdown(pdf)
+        XCTAssertTrue(md.contains("# Title"), md)
+        XCTAssertTrue(md.contains("**bold**"), md)
+        XCTAssertTrue(md.contains("- one"), md)
+        XCTAssertTrue(md.contains("Last paragraph."), md)
+    }
+
+    @MainActor
+    func testDocxToPdf() throws {
+        _ = NSApplication.shared
+        let docx = try Converter.markdownToDocx(sample)
+        let pdf = try Converter.docxToPdf(docx)
+        XCTAssertNotNil(PDFDocument(data: pdf))
     }
 }

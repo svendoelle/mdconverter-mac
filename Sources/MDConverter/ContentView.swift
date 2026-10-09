@@ -8,26 +8,46 @@ struct ContentView: View {
     var body: some View {
         VStack(spacing: 16) {
             dropZone
+            targetPicker
             Button {
                 model.convert()
             } label: {
-                Text(model.direction?.actionTitle ?? "Convert").frame(maxWidth: .infinity)
+                Text(model.target.map { "Convert to \($0.label)…" } ?? "Convert").frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
             .keyboardShortcut(.defaultAction)
-            .disabled(model.direction == nil)
+            .disabled(model.target == nil)
 
             statusView.frame(height: 22)
         }
         .padding(20)
-        .frame(width: 420, height: 320)
+        .frame(width: 420, height: 350)
         .dropDestination(for: URL.self) { urls, _ in
             guard let url = urls.first else { return false }
             model.load(url)
             return true
         } isTargeted: {
             isTargeted = $0
+        }
+    }
+
+    @ViewBuilder
+    private var targetPicker: some View {
+        if let source = model.source {
+            HStack {
+                Text("Convert to")
+                if source.targets.count > 1 {
+                    Picker("", selection: Binding(get: { model.target ?? source.targets[0] }, set: { model.target = $0 })) {
+                        ForEach(source.targets, id: \.self) { Text($0.label).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                } else {
+                    Text(source.targets[0].label).bold()
+                    Spacer()
+                }
+            }
         }
     }
 
@@ -42,15 +62,15 @@ struct ContentView: View {
                 if let url = model.sourceURL {
                     Image(systemName: "doc.text").font(.system(size: 34)).foregroundStyle(.secondary)
                     Text(url.lastPathComponent).font(.headline).lineLimit(1).truncationMode(.middle)
-                    if let direction = model.direction {
-                        Text(direction.label).foregroundStyle(.secondary)
+                    if let source = model.source {
+                        Text("\(source.label) file").foregroundStyle(.secondary)
                     } else {
-                        Text("Unsupported file type — use .md or .docx").foregroundStyle(.red)
+                        Text("Unsupported file type — use .md, .docx or .pdf").foregroundStyle(.red)
                     }
                     Button("Choose Another File…") { model.chooseFile() }
                 } else {
                     Image(systemName: "arrow.down.doc").font(.system(size: 34)).foregroundStyle(.secondary)
-                    Text("Drop a Markdown or Word file here").font(.headline)
+                    Text("Drop a Markdown, Word or PDF file here").font(.headline)
                     Text("or").foregroundStyle(.secondary)
                     Button("Choose File…") { model.chooseFile() }
                 }
