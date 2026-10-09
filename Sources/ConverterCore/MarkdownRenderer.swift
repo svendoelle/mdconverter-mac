@@ -15,7 +15,7 @@ enum MarkdownRenderer {
         for block in blocks {
             if case .listItem(let ordered, let rawLevel, let runs) = block {
                 let level = min(rawLevel, 9)
-                if !prevWasList {
+                if !prevWasList || (level == 0 && kinds[0] != nil && kinds[0] != ordered) {
                     separate()
                     counters = [Int](repeating: 0, count: 10)
                     kinds = [Bool?](repeating: nil, count: 10)
@@ -84,7 +84,8 @@ enum MarkdownRenderer {
             }
             return "| " + texts.joined(separator: " | ") + " |"
         }
-        lines.append(row(header))
+        let plainHeader = header.map { cell in cell.map { r -> Run in var r = r; r.bold = false; return r } }
+        lines.append(row(plainHeader))
         lines.append("|" + String(repeating: " --- |", count: cols))
         for r in rows.dropFirst() { lines.append(row(r)) }
     }
