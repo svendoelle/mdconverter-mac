@@ -3,8 +3,14 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-swift build -c release --arch arm64 --arch x86_64
-BIN="$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)"
+# Universal binary needs full Xcode; fall back to the native architecture otherwise.
+ARCHS=(--arch arm64 --arch x86_64)
+if ! swift build -c release "${ARCHS[@]}" 2>/dev/null; then
+    echo "Universal build unavailable (Xcode not installed?) - building for this Mac only."
+    ARCHS=()
+    swift build -c release
+fi
+BIN="$(swift build -c release "${ARCHS[@]}" --show-bin-path)"
 
 APP="build/MD Converter.app"
 rm -rf "$APP"

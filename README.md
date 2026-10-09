@@ -10,10 +10,11 @@ Not supported yet: images, footnotes, comments, tracked changes.
 
 ## Build
 
-Requires macOS 13+ and Xcode (or the command line tools).
+Requires macOS 13+ and the Xcode command line tools (`xcode-select --install`).
+`swift test` additionally needs the full Xcode app (XCTest); CI runs the tests on every push.
 
 ```sh
-swift test               # run the tests
+swift test               # run the tests (needs full Xcode)
 ./scripts/build_app.sh   # creates build/MD Converter.app (universal, ad-hoc signed)
 ```
 
